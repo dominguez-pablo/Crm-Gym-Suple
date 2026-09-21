@@ -17,30 +17,34 @@ enum Role {
   USUARIO
 }
 
-// Tabla para el Login de los empleados, administradores y clientes
 model Usuario {
   id        Int      @id @default(autoincrement())
   email     String   @unique
   password  String
   role      Role     @default(USUARIO)
-  
-  persona   Persona? 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  persona   Persona?
+  traslados TrasladoStock[]
 }
 
-// La "Fuente de la Verdad" de los datos duros
 model Persona {
   id        Int      @id @default(autoincrement())
   dni       String   @unique
   nombre    String
   apellido  String
   telefono  String?
-  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   usuarioId Int?     @unique
   usuario   Usuario? @relation(fields: [usuarioId], references: [id])
 
-  // Relaciones con los distintos módulos
   socioGym         SocioGym?
   clienteFitMarket ClienteFitMarket?
+
+  @@index([apellido])
 }
 
 // ==========================================
@@ -48,14 +52,13 @@ model Persona {
 // ==========================================
 
 model SocioGym {
-  id              Int       @id @default(autoincrement())
-  
-  // Referencia a la tabla Persona
-  personaId       Int       @unique
-  persona         Persona   @relation(fields: [personaId], references: [id])
-  
-  estadoCuota     Boolean   @default(false)
+  id               Int       @id @default(autoincrement())
+  personaId        Int       @unique
+  persona          Persona   @relation(fields: [personaId], references: [id])
+  estadoCuota      Boolean   @default(false)
   fechaVencimiento DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 }
 
 // ==========================================
@@ -69,35 +72,88 @@ enum TipoClienteMarket {
 }
 
 model ClienteFitMarket {
-  id          Int               @id @default(autoincrement())
-  
-  // Referencia a la tabla Persona
-  personaId   Int               @unique
-  persona     Persona           @relation(fields: [personaId], references: [id])
-  
-  tipo        TipoClienteMarket @default(MINORISTA)
-  deuda       Decimal           @default(0.0) 
+  id        Int               @id @default(autoincrement())
+  personaId Int               @unique
+  persona   Persona           @relation(fields: [personaId], references: [id])
+  tipo      TipoClienteMarket @default(MINORISTA)
+  deuda     Decimal           @default(0.0)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
 
-  // Historial del cliente
-  ventas      Venta[]
-  pedidos     Pedido[]
+  ventas  Venta[]
+  pedidos Pedido[]
+}
+
+model Sucursal {
+  id        Int      @id @default(autoincrement())
+  nombre    String
+  activa    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stocks           StockSucursal[]
+  ventas           Venta[]
+  trasladosOrigen  TrasladoStock[] @relation("TrasladoOrigen")
+  trasladosDestino TrasladoStock[] @relation("TrasladoDestino")
+}
+
+model StockSucursal {
+  id          Int      @id @default(autoincrement())
+  cantidad    Int      @default(0)
+  stockMinimo Int      @default(5)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sucursalId Int
+  sucursal   Sucursal @relation(fields: [sucursalId], references: [id])
+  productoId Int
+  producto   Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+
+  @@unique([sucursalId, productoId])
+  @@index([productoId])
+}
+
+model TrasladoStock {
+  id        Int      @id @default(autoincrement())
+  cantidad  Int
+  nota      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  productoId Int
+  producto   Producto @relation(fields: [productoId], references: [id])
+
+  sucursalOrigenId Int
+  sucursalOrigen   Sucursal @relation("TrasladoOrigen", fields: [sucursalOrigenId], references: [id])
+
+  sucursalDestinoId Int
+  sucursalDestino   Sucursal @relation("TrasladoDestino", fields: [sucursalDestinoId], references: [id])
+
+  usuarioId Int
+  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@index([productoId])
+  @@index([createdAt])
 }
 
 model Producto {
-  id              Int       @id @default(autoincrement())
-  nombre          String
-  descripcion     String?
-  marca           String?
-  stock           Int       @default(0)
-  stockMinimo     Int       @default(5) 
-  
-  // Precios
-  precioCosto     Decimal
-  precioMayorista Decimal
-  precioPublico   Decimal
+  id                Int      @id @default(autoincrement())
+  nombre            String
+  descripcion       String?
+  marca             String?
+  precioCosto       Decimal
+  precioMayorista   Decimal
+  precioRecomendado Decimal  @default(0)
+  precioPublico     Decimal
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  detallesVenta   DetalleVenta[]
-  detallesPedido  DetallePedido[]
+  stocks         StockSucursal[]
+  traslados      TrasladoStock[]
+  detallesVenta  DetalleVenta[]
+  detallesPedido DetallePedido[]
+
+  @@index([nombre])
 }
 
 enum EstadoVenta {
@@ -105,54 +161,86 @@ enum EstadoVenta {
   RETIRADO
 }
 
-model Venta {
-  id              Int               @id @default(autoincrement())
-  fecha           DateTime          @default(now())
-  estado          EstadoVenta       @default(RETIRADO)
-  medioPago       String            
-  total           Decimal
-  
-  clienteId       Int
-  cliente         ClienteFitMarket  @relation(fields: [clienteId], references: [id])
+enum MedioPago {
+  EFECTIVO
+  TRANSFERENCIA
+  DEBITO
+  CREDITO
+  CONSIGNACION
+  OTRO
+}
 
-  detalles        DetalleVenta[]
+model Venta {
+  id        Int               @id @default(autoincrement())
+  fecha     DateTime          @default(now())
+  estado    EstadoVenta       @default(RETIRADO)
+  medioPago String
+  total     Decimal
+  clienteId Int?
+  cliente   ClienteFitMarket? @relation(fields: [clienteId], references: [id])
+  sucursalId Int
+  sucursal   Sucursal         @relation(fields: [sucursalId], references: [id])
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  detalles DetalleVenta[]
+  pagos    PagoVenta[]
+
+  @@index([fecha])
+  @@index([clienteId])
+  @@index([sucursalId])
+}
+
+model PagoVenta {
+  id        Int       @id @default(autoincrement())
+  medio     MedioPago
+  monto     Decimal
+  cuotas    Int?
+  nota      String?
+  ventaId   Int
+  venta     Venta     @relation(fields: [ventaId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([ventaId])
 }
 
 model DetalleVenta {
-  id              Int       @id @default(autoincrement())
-  cantidad        Int
-  precioUnitario  Decimal   // Para congelar el precio histórico
-  
-  ventaId         Int
-  venta           Venta     @relation(fields: [ventaId], references: [id])
-  
-  productoId      Int
-  producto        Producto  @relation(fields: [productoId], references: [id])
+  id             Int      @id @default(autoincrement())
+  cantidad       Int
+  precioUnitario Decimal
+  ventaId        Int
+  venta          Venta    @relation(fields: [ventaId], references: [id])
+  productoId     Int
+  producto       Producto @relation(fields: [productoId], references: [id])
 }
 
 enum EstadoPedido {
   PENDIENTE
+  APROBADO
   RECHAZADO
 }
 
 model Pedido {
-  id              Int               @id @default(autoincrement())
-  fecha           DateTime          @default(now())
-  estado          EstadoPedido      @default(PENDIENTE)
-  
-  clienteId       Int
-  cliente         ClienteFitMarket  @relation(fields: [clienteId], references: [id])
-  
-  detalles        DetallePedido[]
+  id        Int              @id @default(autoincrement())
+  fecha     DateTime         @default(now())
+  estado    EstadoPedido     @default(PENDIENTE)
+  clienteId Int
+  cliente   ClienteFitMarket @relation(fields: [clienteId], references: [id])
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  detalles DetallePedido[]
+
+  @@index([fecha])
+  @@index([clienteId])
 }
 
 model DetallePedido {
-  id              Int       @id @default(autoincrement())
-  cantidad        Int
-  
-  pedidoId        Int
-  pedido          Pedido    @relation(fields: [pedidoId], references: [id])
-  
-  productoId      Int
-  producto        Producto  @relation(fields: [productoId], references: [id])
+  id         Int      @id @default(autoincrement())
+  cantidad   Int
+  pedidoId   Int
+  pedido     Pedido   @relation(fields: [pedidoId], references: [id])
+  productoId Int
+  producto   Producto @relation(fields: [productoId], references: [id])
 }
