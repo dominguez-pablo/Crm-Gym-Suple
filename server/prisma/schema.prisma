@@ -22,11 +22,22 @@ model Usuario {
   email     String   @unique
   password  String
   role      Role     @default(USUARIO)
+  activo    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  persona   Persona?
-  traslados TrasladoStock[]
+  sucursalId Int?
+  sucursal   Sucursal? @relation("UsuarioSucursal", fields: [sucursalId], references: [id])
+
+  persona         Persona?
+  traslados       TrasladoStock[]
+  cajasApertura   CajaSesion[]      @relation("CajaApertura")
+  cajasCierre     CajaSesion[]      @relation("CajaCierre")
+  cajaMovimientos CajaMovimiento[]
+  pagosMembresia  PagoMembresia[]
+  accesos         AccesoGym[]
+
+  @@index([sucursalId])
 }
 
 model Persona {
@@ -51,14 +62,164 @@ model Persona {
 // 2. MÓDULO: INFINITY ACADEMIA (Gimnasio)
 // ==========================================
 
+enum ModuloSucursal {
+  FIT_MARKET
+  GYM
+}
+
+enum EstadoCaja {
+  ABIERTA
+  CERRADA
+}
+
+enum TipoMovimientoCaja {
+  APERTURA
+  INGRESO
+  EGRESO
+  PAGO_MEMBRESIA
+  CIERRE
+}
+
+enum ResultadoAcceso {
+  PERMITIDO
+  DENEGADO
+}
+
+model PlanMembresia {
+  id           Int       @id @default(autoincrement())
+  nombre       String
+  duracionDias Int
+  precio       Decimal
+  activa       Boolean   @default(true)
+  multisede    Boolean   @default(false)
+  sucursalId   Int?
+  sucursal     Sucursal? @relation(fields: [sucursalId], references: [id])
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  socios SocioGym[]
+  pagos  PagoMembresia[]
+
+  @@index([nombre])
+  @@index([sucursalId])
+}
+
 model SocioGym {
   id               Int       @id @default(autoincrement())
   personaId        Int       @unique
   persona          Persona   @relation(fields: [personaId], references: [id])
+  sucursalId       Int?
+  sucursal         Sucursal? @relation(fields: [sucursalId], references: [id])
+  planId           Int?
+  plan             PlanMembresia? @relation(fields: [planId], references: [id])
+  activo           Boolean   @default(true)
   estadoCuota      Boolean   @default(false)
   fechaVencimiento DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+
+  pagos   PagoMembresia[]
+  accesos AccesoGym[]
+
+  @@index([sucursalId])
+  @@index([planId])
+  @@index([fechaVencimiento])
+}
+
+model PagoMembresia {
+  id           Int       @id @default(autoincrement())
+  monto        Decimal
+  recargo      Decimal   @default(0)
+  medio        MedioPago
+  cuotas       Int?
+  fechaPago    DateTime  @default(now())
+  periodoDesde DateTime
+  periodoHasta DateTime
+  nota         String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  socioId    Int
+  socio      SocioGym       @relation(fields: [socioId], references: [id])
+  planId     Int
+  plan       PlanMembresia  @relation(fields: [planId], references: [id])
+  sucursalId Int
+  sucursal   Sucursal       @relation(fields: [sucursalId], references: [id])
+  usuarioId  Int
+  usuario    Usuario        @relation(fields: [usuarioId], references: [id])
+
+  movimiento CajaMovimiento?
+
+  @@index([socioId])
+  @@index([sucursalId])
+  @@index([createdAt])
+  @@index([fechaPago])
+}
+
+model AccesoGym {
+  id        Int             @id @default(autoincrement())
+  dni       String
+  resultado ResultadoAcceso
+  motivo    String?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  socioId    Int?
+  socio      SocioGym? @relation(fields: [socioId], references: [id])
+  sucursalId Int
+  sucursal   Sucursal  @relation(fields: [sucursalId], references: [id])
+  usuarioId  Int
+  usuario    Usuario   @relation(fields: [usuarioId], references: [id])
+
+  @@index([dni])
+  @@index([sucursalId])
+  @@index([createdAt])
+  @@index([socioId])
+}
+
+model CajaSesion {
+  id                   Int        @id @default(autoincrement())
+  estado               EstadoCaja @default(ABIERTA)
+  montoApertura        Decimal
+  montoCierreDeclarado Decimal?
+  montoCierreSistema   Decimal?
+  diferencia           Decimal?
+  observaciones        String?
+  abiertaEn            DateTime   @default(now())
+  cerradaEn            DateTime?
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+
+  sucursalId        Int
+  sucursal          Sucursal @relation(fields: [sucursalId], references: [id])
+  usuarioAperturaId Int
+  usuarioApertura   Usuario  @relation("CajaApertura", fields: [usuarioAperturaId], references: [id])
+  usuarioCierreId   Int?
+  usuarioCierre     Usuario? @relation("CajaCierre", fields: [usuarioCierreId], references: [id])
+
+  movimientos CajaMovimiento[]
+
+  @@index([sucursalId, estado])
+  @@index([abiertaEn])
+}
+
+model CajaMovimiento {
+  id        Int                 @id @default(autoincrement())
+  tipo      TipoMovimientoCaja
+  monto     Decimal
+  concepto  String
+  medio     MedioPago?
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  cajaSesionId    Int
+  cajaSesion      CajaSesion     @relation(fields: [cajaSesionId], references: [id])
+  usuarioId       Int
+  usuario         Usuario        @relation(fields: [usuarioId], references: [id])
+  pagoMembresiaId Int?           @unique
+  pagoMembresia   PagoMembresia? @relation(fields: [pagoMembresiaId], references: [id])
+
+  @@index([cajaSesionId])
 }
 
 // ==========================================
@@ -85,16 +246,23 @@ model ClienteFitMarket {
 }
 
 model Sucursal {
-  id        Int      @id @default(autoincrement())
-  nombre    String   @unique
-  activa    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        Int               @id @default(autoincrement())
+  nombre    String            @unique
+  activa    Boolean           @default(true)
+  modulos   ModuloSucursal[]  @default([FIT_MARKET])
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
 
   stocks           StockSucursal[]
   ventas           Venta[]
   trasladosOrigen  TrasladoStock[] @relation("TrasladoOrigen")
   trasladosDestino TrasladoStock[] @relation("TrasladoDestino")
+  empleados        Usuario[]       @relation("UsuarioSucursal")
+  socios           SocioGym[]
+  planes           PlanMembresia[]
+  pagosMembresia   PagoMembresia[]
+  accesos          AccesoGym[]
+  cajas            CajaSesion[]
 }
 
 model StockSucursal {

@@ -5,7 +5,7 @@ import { HttpError, asyncHandler } from '../utils/http.js';
 import { serializeUsuario } from '../utils/serialize.js';
 import { loginSchema, registerSchema } from '../validators/auth.validator.js';
 
-const usuarioInclude = { persona: true };
+const usuarioInclude = { persona: true, sucursal: true };
 
 export const register = asyncHandler(async (req, res) => {
   const data = registerSchema.parse(req.body);
@@ -47,6 +47,10 @@ export const login = asyncHandler(async (req, res) => {
     throw new HttpError(401, 'Email o contraseña incorrectos');
   }
 
+  if (!usuario.activo) {
+    throw new HttpError(401, 'Usuario deshabilitado');
+  }
+
   const ok = await bcrypt.compare(password, usuario.password);
   if (!ok) {
     throw new HttpError(401, 'Email o contraseña incorrectos');
@@ -63,7 +67,7 @@ export const me = asyncHandler(async (req, res) => {
     include: usuarioInclude,
   });
 
-  if (!usuario) {
+  if (!usuario || !usuario.activo) {
     throw new HttpError(401, 'Sesión inválida');
   }
 

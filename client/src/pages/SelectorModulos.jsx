@@ -15,6 +15,10 @@ function SelectorModulos() {
     window.open('/fit-market', 'fit-market')
   }
 
+  const openAcademia = () => {
+    window.open('/infinity-academia', 'infinity-academia')
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-slate-100">
       <header className="flex items-center justify-end px-6 py-4">
@@ -61,16 +65,19 @@ function SelectorModulos() {
             </p>
           </button>
 
-          <div
-            aria-disabled="true"
-            className="cursor-not-allowed rounded-2xl border border-slate-200 bg-white p-8 opacity-60 shadow-sm"
+          <button
+            type="button"
+            onClick={openAcademia}
+            className="rounded-2xl border border-slate-200 bg-white p-8 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-600 hover:shadow-md"
           >
-            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-200 text-slate-500">
+            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-700 text-white">
               <GraduationCap className="h-6 w-6" strokeWidth={1.75} />
             </span>
             <h2 className="mt-5 text-xl font-semibold text-slate-900">Infinity Academia</h2>
-            <p className="mt-1 text-sm text-slate-500">Próximamente</p>
-          </div>
+            <p className="mt-1 text-sm text-slate-500">
+              Socios, membresías, caja e ingreso por DNI
+            </p>
+          </button>
         </div>
       </main>
     </div>

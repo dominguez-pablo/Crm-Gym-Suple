@@ -42,9 +42,11 @@ export const getProduct = asyncHandler(async (req, res) => {
 
 export const createProduct = asyncHandler(async (req, res) => {
   const { stocks = [], ...catalog } = createProductoSchema.parse(req.body);
-  const sucursales = await prisma.sucursal.findMany({ where: { activa: true } });
+  const sucursales = await prisma.sucursal.findMany({
+    where: { activa: true, modulos: { has: 'FIT_MARKET' } },
+  });
   if (sucursales.length === 0) {
-    throw new HttpError(400, 'No hay sucursales activas');
+    throw new HttpError(400, 'No hay sucursales de Fit Market activas');
   }
 
   const porSucursal = new Map(stocks.map((stock) => [stock.sucursalId, stock]));

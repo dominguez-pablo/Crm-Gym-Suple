@@ -1,9 +1,12 @@
 import api from './client'
 
 export const sucursalesApi = {
-  list: async (todas = false) => {
+  list: async (todas = false, modulo) => {
     const { data } = await api.get('/sucursales', {
-      params: todas ? { todas: 1 } : undefined,
+      params: {
+        ...(todas ? { todas: 1 } : {}),
+        ...(modulo ? { modulo } : {}),
+      },
     })
     return data
   },

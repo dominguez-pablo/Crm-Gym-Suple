@@ -1,5 +1,6 @@
 import prisma from '../db/prisma.js';
 import { emitSucursalChanged } from '../events/stockBus.js';
+import { hasModulo } from '../utils/gym.js';
 import { HttpError, asyncHandler, parseId } from '../utils/http.js';
 import { descontarStock, emitProductoStock } from '../utils/stock.js';
 import {
@@ -14,9 +15,21 @@ function serializeAdmin(sucursal) {
     id: sucursal.id,
     nombre: sucursal.nombre,
     activa: sucursal.activa,
+    modulos: sucursal.modulos || [],
     createdAt: sucursal.createdAt,
     updatedAt: sucursal.updatedAt,
     stockTotal: stocks.reduce((acc, stock) => acc + stock.cantidad, 0),
+  };
+}
+
+function serializePublic(sucursal) {
+  return {
+    id: sucursal.id,
+    nombre: sucursal.nombre,
+    activa: sucursal.activa,
+    modulos: sucursal.modulos || [],
+    createdAt: sucursal.createdAt,
+    updatedAt: sucursal.updatedAt,
   };
 }
 
@@ -40,43 +53,64 @@ export const getSucursales = asyncHandler(async (req, res) => {
   if (pideTodas && req.user.role !== 'SUPERADMIN') {
     throw new HttpError(403, 'No tenés permisos para esta acción');
   }
-  const todas = pideTodas;
+  const modulo = req.query.modulo ? String(req.query.modulo).toUpperCase() : null;
+  if (modulo && modulo !== 'GYM' && modulo !== 'FIT_MARKET') {
+    throw new HttpError(400, 'El módulo de sucursal no es válido');
+  }
+
+  const where = {
+    ...(pideTodas ? {} : { activa: true }),
+    ...(modulo ? { modulos: { has: modulo } } : {}),
+  };
+
   const sucursales = await prisma.sucursal.findMany({
-    where: todas ? undefined : { activa: true },
-    include: todas ? { stocks: { select: { cantidad: true } } } : undefined,
-    orderBy: todas ? [{ activa: 'desc' }, { id: 'asc' }] : { id: 'asc' },
+    where,
+    include: pideTodas ? { stocks: { select: { cantidad: true } } } : undefined,
+    orderBy: pideTodas ? [{ activa: 'desc' }, { id: 'asc' }] : { id: 'asc' },
   });
 
-  if (todas) {
+  if (pideTodas) {
     return res.status(200).json(sucursales.map(serializeAdmin));
   }
-  return res.status(200).json(sucursales);
+  return res.status(200).json(sucursales.map(serializePublic));
 });
 
 export const createSucursal = asyncHandler(async (req, res) => {
-  const { nombre } = createSucursalSchema.parse(req.body);
+  const { nombre, modulos } = createSucursalSchema.parse(req.body);
 
   const sucursal = await prisma.$transaction(async (tx) => {
-    const creada = await tx.sucursal.create({ data: { nombre } });
-    await ensureStockRows(tx, creada.id);
+    const creada = await tx.sucursal.create({ data: { nombre, modulos } });
+    if (hasModulo(creada, 'FIT_MARKET')) {
+      await ensureStockRows(tx, creada.id);
+    }
     return creada;
   });
 
   emitSucursalChanged({ sucursalId: sucursal.id, accion: 'crear' });
-  return res.status(201).json(sucursal);
+  return res.status(201).json(serializePublic(sucursal));
 });
 
 export const updateSucursal = asyncHandler(async (req, res) => {
   const id = parseId(req.params.id);
-  const { nombre } = updateSucursalSchema.parse(req.body);
+  const data = updateSucursalSchema.parse(req.body);
 
-  const sucursal = await prisma.sucursal.update({
-    where: { id },
-    data: { nombre },
+  const sucursal = await prisma.$transaction(async (tx) => {
+    const actual = await tx.sucursal.findUnique({ where: { id } });
+    if (!actual) throw new HttpError(404, 'Sucursal no encontrada');
+
+    const actualizada = await tx.sucursal.update({
+      where: { id },
+      data,
+    });
+
+    if (hasModulo(actualizada, 'FIT_MARKET')) {
+      await ensureStockRows(tx, id);
+    }
+    return actualizada;
   });
 
-  emitSucursalChanged({ sucursalId: sucursal.id, accion: 'renombrar' });
-  return res.status(200).json(sucursal);
+  emitSucursalChanged({ sucursalId: id, accion: 'renombrar' });
+  return res.status(200).json(serializePublic(sucursal));
 });
 
 export const cerrarSucursal = asyncHandler(async (req, res) => {
@@ -174,7 +208,9 @@ export const reabrirSucursal = asyncHandler(async (req, res) => {
     if (!actual) throw new HttpError(404, 'Sucursal no encontrada');
     if (actual.activa) throw new HttpError(400, 'El local ya está activo');
 
-    await ensureStockRows(tx, id);
+    if (hasModulo(actual, 'FIT_MARKET')) {
+      await ensureStockRows(tx, id);
+    }
     return tx.sucursal.update({
       where: { id },
       data: { activa: true },

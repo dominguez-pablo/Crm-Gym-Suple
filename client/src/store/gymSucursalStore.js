@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { sucursalesApi } from '../api/sucursales'
 
-const STORAGE_KEY = 'fitmarket.sucursalId'
+const STORAGE_KEY = 'academia.sucursalId'
 
 function readStoredId() {
   const raw = localStorage.getItem(STORAGE_KEY)
@@ -9,14 +9,14 @@ function readStoredId() {
   return Number.isInteger(id) && id > 0 ? id : null
 }
 
-export const useSucursalStore = create((set, get) => ({
+export const useGymSucursalStore = create((set, get) => ({
   sucursales: [],
   sucursalId: readStoredId(),
   loading: true,
   error: '',
   load: async (options = {}) => {
     if (!options.silent) set({ loading: true, error: '' })
-    const sucursales = await sucursalesApi.list(false, 'FIT_MARKET')
+    const sucursales = await sucursalesApi.list(false, 'GYM')
     const current = get().sucursalId
     const valid = sucursales.some((sucursal) => sucursal.id === current)
     const nextId = valid ? current : null
