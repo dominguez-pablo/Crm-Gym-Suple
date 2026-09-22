@@ -1,5 +1,13 @@
 import { NavLink } from 'react-router-dom'
-import { ArrowLeft, LayoutDashboard, Package, ShoppingCart, Users } from 'lucide-react'
+import {
+  ArrowLeft,
+  LayoutDashboard,
+  MapPin,
+  Package,
+  ShoppingCart,
+  Users,
+} from 'lucide-react'
+import { useAuth } from '../../context/AuthContext'
 
 const navItems = [
   { to: '/fit-market', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -9,6 +17,12 @@ const navItems = [
 ]
 
 function Sidebar() {
+  const { user } = useAuth()
+  const items =
+    user?.role === 'SUPERADMIN'
+      ? [...navItems, { to: '/fit-market/locales', label: 'Locales', icon: MapPin }]
+      : navItems
+
   return (
     <aside className="flex h-full w-64 shrink-0 flex-col border-r border-gray-100 bg-white shadow-sm">
       <div className="flex h-16 items-center gap-2 border-b border-gray-100 px-6">
@@ -22,7 +36,7 @@ function Sidebar() {
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 p-4">
-        {navItems.map(({ to, label, icon: Icon, end }) => (
+        {items.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}

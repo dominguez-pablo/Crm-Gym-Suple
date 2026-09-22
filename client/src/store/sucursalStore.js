@@ -14,14 +14,16 @@ export const useSucursalStore = create((set, get) => ({
   sucursalId: readStoredId(),
   loading: true,
   error: '',
-  load: async () => {
-    set({ loading: true, error: '' })
+  load: async (options = {}) => {
+    if (!options.silent) set({ loading: true, error: '' })
     const sucursales = await sucursalesApi.list()
     const current = get().sucursalId
     const valid = sucursales.some((sucursal) => sucursal.id === current)
+    const nextId = valid ? current : null
+    if (!nextId) localStorage.removeItem(STORAGE_KEY)
     set({
       sucursales,
-      sucursalId: valid ? current : null,
+      sucursalId: nextId,
       loading: false,
     })
   },

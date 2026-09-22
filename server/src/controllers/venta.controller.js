@@ -71,6 +71,9 @@ export const createVenta = asyncHandler(async (req, res) => {
     if (!sucursal) {
       throw new HttpError(404, 'Sucursal no encontrada');
     }
+    if (!sucursal.activa) {
+      throw new HttpError(400, 'Este local está cerrado. Elegí otro punto de venta');
+    }
 
     if (clienteId) {
       const cliente = await tx.clienteFitMarket.findUnique({

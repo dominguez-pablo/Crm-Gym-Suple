@@ -1,25 +1,37 @@
 import { useEffect } from 'react'
 
-export function useStockEvents(onEvent) {
+export function useStockEvents(onStockChanged, onSucursalChanged) {
   useEffect(() => {
     const source = new EventSource('/api/eventos/stock', { withCredentials: true })
 
-    const handler = (event) => {
+    const stockHandler = (event) => {
+      if (!onStockChanged) return
       try {
-        onEvent(JSON.parse(event.data))
+        onStockChanged(JSON.parse(event.data))
       } catch {
         // ignore malformed payloads
       }
     }
 
-    source.addEventListener('STOCK_CHANGED', handler)
+    const sucursalHandler = (event) => {
+      if (!onSucursalChanged) return
+      try {
+        onSucursalChanged(event.data ? JSON.parse(event.data) : {})
+      } catch {
+        onSucursalChanged({})
+      }
+    }
+
+    source.addEventListener('STOCK_CHANGED', stockHandler)
+    source.addEventListener('SUCURSAL_CHANGED', sucursalHandler)
     source.onerror = () => {
       // El browser reintenta solo; no rompemos la UI
     }
 
     return () => {
-      source.removeEventListener('STOCK_CHANGED', handler)
+      source.removeEventListener('STOCK_CHANGED', stockHandler)
+      source.removeEventListener('SUCURSAL_CHANGED', sucursalHandler)
       source.close()
     }
-  }, [onEvent])
+  }, [onStockChanged, onSucursalChanged])
 }

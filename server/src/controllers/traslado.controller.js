@@ -32,6 +32,8 @@ export const createTraslado = asyncHandler(async (req, res) => {
 
     if (!producto) throw new HttpError(404, 'Producto no encontrado');
     if (!origen || !destino) throw new HttpError(404, 'Sucursal no encontrada');
+    if (!origen.activa) throw new HttpError(400, 'El local de origen está cerrado');
+    if (!destino.activa) throw new HttpError(400, 'El local de destino está cerrado');
 
     await descontarStock(tx, {
       sucursalId: data.sucursalOrigenId,

@@ -44,6 +44,10 @@ function stocksFromProducto(producto, sucursales) {
 
 function Inventario() {
   const sucursales = useSucursalStore((state) => state.sucursales)
+  const sucursalKey = useMemo(
+    () => sucursales.map((sucursal) => `${sucursal.id}:${sucursal.nombre}`).join(','),
+    [sucursales],
+  )
   const [tab, setTab] = useState('productos')
   const [productos, setProductos] = useState([])
   const [traslados, setTraslados] = useState([])
@@ -72,7 +76,7 @@ function Inventario() {
     load()
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
-  }, [])
+  }, [sucursalKey])
 
   const onStockEvent = useCallback((event) => {
     setProductos((lista) => lista.map((producto) => applyStockEvent(producto, event)))
@@ -96,7 +100,7 @@ function Inventario() {
 
   const openTraslado = (producto) => {
     const origen = sucursales[0]?.id || ''
-    const destino = sucursales[1]?.id || sucursales[0]?.id || ''
+    const destino = sucursales.find((item) => item.id !== origen)?.id || origen
     setTraslado({
       producto,
       sucursalOrigenId: origen,

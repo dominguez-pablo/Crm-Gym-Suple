@@ -17,8 +17,10 @@ export const subscribeStock = (req, res, next) => {
 
     send('ready', { ok: true });
 
-    const onChange = (payload) => send('STOCK_CHANGED', payload);
-    stockBus.on('STOCK_CHANGED', onChange);
+    const onStock = (payload) => send('STOCK_CHANGED', payload);
+    const onSucursal = (payload) => send('SUCURSAL_CHANGED', payload);
+    stockBus.on('STOCK_CHANGED', onStock);
+    stockBus.on('SUCURSAL_CHANGED', onSucursal);
 
     const heartbeat = setInterval(() => {
       res.write(': ping\n\n');
@@ -26,7 +28,8 @@ export const subscribeStock = (req, res, next) => {
 
     const cleanup = () => {
       clearInterval(heartbeat);
-      stockBus.off('STOCK_CHANGED', onChange);
+      stockBus.off('STOCK_CHANGED', onStock);
+      stockBus.off('SUCURSAL_CHANGED', onSucursal);
     };
 
     req.on('close', cleanup);
