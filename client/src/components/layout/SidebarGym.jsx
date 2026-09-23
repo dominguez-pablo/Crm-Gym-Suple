@@ -11,6 +11,7 @@ import {
   Wallet,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import logoInfinity from '../../assets/LogoInfinityAcademia.jpg'
 
 const navItems = [
   { to: '/infinity-academia', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -35,9 +36,7 @@ function SidebarGym() {
   return (
     <aside className="flex h-full w-64 shrink-0 flex-col border-r border-gray-100 bg-white shadow-sm">
       <div className="flex h-16 items-center gap-2 border-b border-gray-100 px-6">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-700 text-sm font-semibold text-white">
-          IA
-        </span>
+        <img src={logoInfinity} alt="" className="h-8 w-8 rounded-lg object-cover" />
         <div>
           <p className="text-sm font-semibold text-slate-900">Infinity Academia</p>
           <p className="text-xs text-slate-400">Gestión del gimnasio</p>

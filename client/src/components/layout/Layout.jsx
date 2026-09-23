@@ -3,8 +3,10 @@ import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Topbar from './Topbar'
 import { useStockEvents } from '../../hooks/useStockEvents'
+import { useDocumentBrand } from '../../hooks/useDocumentBrand'
 import { useSucursalStore } from '../../store/sucursalStore'
 import { useAuth } from '../../context/AuthContext'
+import logoFit from '../../assets/LogoFItMarket.jpg'
 
 function Layout() {
   const { user } = useAuth()
@@ -14,6 +16,8 @@ function Layout() {
   const sucursalId = useSucursalStore((state) => state.sucursalId)
   const setSucursalId = useSucursalStore((state) => state.setSucursalId)
   const esAdmin = user?.role === 'SUPERADMIN'
+
+  useDocumentBrand({ title: 'Fit Market', icon: logoFit })
 
   useEffect(() => {
     load().catch(() => {})

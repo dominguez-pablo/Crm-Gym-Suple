@@ -2,8 +2,10 @@ import { useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
 import SidebarGym from './SidebarGym'
 import TopbarGym from './TopbarGym'
+import { useDocumentBrand } from '../../hooks/useDocumentBrand'
 import { useGymSucursalStore } from '../../store/gymSucursalStore'
 import { useAuth } from '../../context/AuthContext'
+import logoInfinity from '../../assets/LogoInfinityAcademia.jpg'
 
 function LayoutGym() {
   const { user } = useAuth()
@@ -13,6 +15,8 @@ function LayoutGym() {
   const sucursalId = useGymSucursalStore((state) => state.sucursalId)
   const setSucursalId = useGymSucursalStore((state) => state.setSucursalId)
   const esAdmin = user?.role === 'SUPERADMIN'
+
+  useDocumentBrand({ title: 'Infinity Academia', icon: logoInfinity })
   const sedeAsignada = sucursales.find((item) => item.id === user?.sucursalId)
 
   useEffect(() => {

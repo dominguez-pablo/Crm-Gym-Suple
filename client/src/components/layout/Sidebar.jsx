@@ -8,6 +8,7 @@ import {
   Users,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import logoFit from '../../assets/LogoFItMarket.jpg'
 
 const navItems = [
   { to: '/fit-market', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -26,9 +27,7 @@ function Sidebar() {
   return (
     <aside className="flex h-full w-64 shrink-0 flex-col border-r border-gray-100 bg-white shadow-sm">
       <div className="flex h-16 items-center gap-2 border-b border-gray-100 px-6">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-sm font-semibold text-white">
-          FM
-        </span>
+        <img src={logoFit} alt="" className="h-8 w-8 rounded-lg object-cover" />
         <div>
           <p className="text-sm font-semibold text-slate-900">Fit Market</p>
           <p className="text-xs text-slate-400">CRM Administrativo</p>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
+import BrandBackdrop from '../components/BrandBackdrop'
 import { useAuth } from '../context/AuthContext'
 
 function Login() {
@@ -31,8 +32,9 @@ function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4">
+      <BrandBackdrop />
+      <div className="relative z-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-xl">
         <p className="text-xs font-semibold tracking-wide text-emerald-700 uppercase">
           Gym Suple
         </p>
