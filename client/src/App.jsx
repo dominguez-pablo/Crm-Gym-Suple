@@ -1,22 +1,22 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import Layout from './components/layout/Layout'
-import LayoutGym from './components/layout/LayoutGym'
-import ProtectedRoute from './components/ProtectedRoute'
-import Clientes from './pages/Clientes'
-import Dashboard from './pages/Dashboard'
-import Inventario from './pages/Inventario'
-import Locales from './pages/Locales'
-import Login from './pages/Login'
-import PuntoDeVenta from './pages/PuntoDeVenta'
-import SelectorModulos from './pages/SelectorModulos'
-import DashboardGym from './pages/gym/DashboardGym'
-import Ingreso from './pages/gym/Ingreso'
-import Socios from './pages/gym/Socios'
-import Membresias from './pages/gym/Membresias'
-import Vencidas from './pages/gym/Vencidas'
-import Caja from './pages/gym/Caja'
-import SucursalesGym from './pages/gym/SucursalesGym'
-import Empleados from './pages/gym/Empleados'
+import Layout from './suplementos/components/Layout'
+import LayoutInfinity from './infinity/components/Layout'
+import ProtectedRoute from './compartido/components/ProtectedRoute'
+import Clientes from './suplementos/pages/Clientes'
+import Dashboard from './suplementos/pages/Dashboard'
+import Inventario from './suplementos/pages/Inventario'
+import Locales from './suplementos/pages/Locales'
+import Login from './compartido/pages/Login'
+import PuntoDeVenta from './suplementos/pages/PuntoDeVenta'
+import SelectorModulos from './compartido/pages/SelectorModulos'
+import DashboardInfinity from './infinity/pages/Dashboard'
+import Ingreso from './infinity/pages/Ingreso'
+import Socios from './infinity/pages/Socios'
+import Membresias from './infinity/pages/Membresias'
+import Vencidas from './infinity/pages/Vencidas'
+import Caja from './infinity/pages/Caja'
+import SucursalesInfinity from './infinity/pages/Sucursales'
+import Empleados from './infinity/pages/Empleados'
 
 function App() {
   return (
@@ -49,18 +49,18 @@ function App() {
           path="/infinity-academia"
           element={
             <ProtectedRoute>
-              <LayoutGym />
+              <LayoutInfinity />
             </ProtectedRoute>
           }
         >
-          <Route index element={<DashboardGym />} />
+          <Route index element={<DashboardInfinity />} />
           <Route path="ingreso" element={<Ingreso />} />
           <Route path="socios" element={<Socios />} />
           <Route path="membresias" element={<Membresias />} />
           <Route path="pagos" element={<Navigate to="/infinity-academia/socios" replace />} />
           <Route path="vencidas" element={<Vencidas />} />
           <Route path="caja" element={<Caja />} />
-          <Route path="sucursales" element={<SucursalesGym />} />
+          <Route path="sucursales" element={<SucursalesInfinity />} />
           <Route path="empleados" element={<Empleados />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
